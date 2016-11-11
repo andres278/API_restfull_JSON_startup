@@ -112,7 +112,7 @@ func main() {
 	})
 
 
-// POST new restaurantes details
+// POST new reserva details
 	router.POST("/reserva", func(c *gin.Context) {
 		var buffer bytes.Buffer
 		
