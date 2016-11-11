@@ -176,6 +176,88 @@ func main() {
  	})
 
 
+// GET all clientes
+	router.GET("/clientes", func(c *gin.Context) {
+		var (
+			cliente  Cliente
+			clientes []Cliente
+		)
+		rows, err := db.Query("select  *from cliente c, cli_telefono t, cli_correo e where c.idCliente = t.cliente_idCliente AND e.cliente_idCliente = c.idCliente")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&cliente.IDCliente, &cliente.Nombre, &cliente.Apellido, &cliente.Pass, &cliente.Tel.Cliente_idCliente, &cliente.Tel.Telefono, &cliente.Cor.Cliente_idCliente, &cliente.Cor.Correo)
+			clientes = append(clientes, cliente)
+
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": clientes,
+			"count":  len(clientes),
+		})
+	})
+
+
+
+	// GET a cliente detail
+	router.GET("/cliente/:id", func(c *gin.Context) {
+		var (
+			cliente  Cliente
+			clientes []Cliente
+		)
+		id := c.Param("id")
+		rows, err := db.Query("SELECT *FROM cliente c INNER JOIN cli_telefono t ON (c.idCliente = t.cliente_idCliente) INNER JOIN cli_correo e ON (c.idCliente = e.cliente_idCliente) WHERE c.idCliente = ?;", id)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&cliente.IDCliente, &cliente.Nombre, &cliente.Apellido, &cliente.Pass, &cliente.Tel.Cliente_idCliente, &cliente.Tel.Telefono, &cliente.Cor.Cliente_idCliente, &cliente.Cor.Correo)
+			clientes = append(clientes, cliente)
+
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": clientes,
+			"count":  len(clientes),
+		})
+	})
+
+
+// POST new cliente details
+	router.POST("/cliente", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		nombre := c.PostForm("nombre")
+		apellido := c.PostForm("apellido")
+		pass := c.PostForm("pass")
+		stmt, err := db.Prepare("insert into cliente (nombre, apellido, pass) values(?,?,?);")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		_, err = stmt.Exec(nombre, apellido, pass)
+
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
+		// Fastest way to append strings
+		buffer.WriteString(nombre)
+		buffer.WriteString(" ")
+		buffer.WriteString(apellido)
+		buffer.WriteString(" ")
+		buffer.WriteString(pass)
+		defer stmt.Close()
+		dato := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(" %s successfully created", dato),
+		})
+	})
 
 
 
