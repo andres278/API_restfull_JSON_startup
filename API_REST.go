@@ -82,6 +82,95 @@ func main() {
 
 //Acá ingresar el contenido de los metodos que daran el servicio API
 	
+// GET all restaurantes
+	router.GET("/restaurantes", func(c *gin.Context) {
+		var (
+			restaurante  Restaurante
+			restaurantes []Restaurante
+		)
+		rows, err := db.Query("select id, nit, razon_social, contacto from restaurante;")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&restaurante.ID, &restaurante.Nit, &restaurante.Razon_social, &restaurante.Contacto)
+			restaurantes = append(restaurantes, restaurante)
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": restaurantes,
+			"count":  len(restaurantes),
+		})
+	})
+
+
+
+
+	// GET a restaurante detail
+	router.GET("/restaurante/:id", func(c *gin.Context) {
+		var (
+			restaurante  Restaurante
+			restaurantes []Restaurante
+		)
+		id := c.Param("id")
+		rows, err := db.Query("SELECT *FROM restaurante r INNER JOIN res_telefono t ON (r.id = t.restaurante_id) WHERE r.id = ?;", id)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&restaurante.ID, &restaurante.Nit, &restaurante.Razon_social, &restaurante.Contacto, &restaurante.Call_y_numero, &restaurante.Barrio, &restaurante.Ciudad, &restaurante.Pais,
+			&restaurante.Tel.Restaurante_idRestaurante, &restaurante.Tel.Telefono)
+			restaurantes = append(restaurantes, restaurante)
+
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": restaurantes,
+			"count":  len(restaurantes),
+		})
+	})
+
+
+
+	// POST new restaurantes details
+	router.POST("/restaurante", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		nit := c.PostForm("nit")
+		razon_social := c.PostForm("razon_social")
+		contacto := c.PostForm("contacto")
+		call_y_numero := c.PostForm("call_y_numero")
+		barrio := c.PostForm("barrio")
+		ciudad := c.PostForm("ciudad")
+		pais := c.PostForm("pais")
+		stmt, err := db.Prepare("insert into restaurante (nit, razon_social, contacto, call_y_numero, barrio, ciudad, pais) values(?,?,?,?,?,?,?);")
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		_, err = stmt.Exec(nit, razon_social, contacto, call_y_numero, barrio, ciudad, pais)
+
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
+		// Fastest way to append strings
+		buffer.WriteString(razon_social)
+		buffer.WriteString(" ")
+		buffer.WriteString(ciudad)
+		buffer.WriteString(" ")
+		buffer.WriteString(pais)
+		defer stmt.Close()
+		dato := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(" %s successfully created", dato),
+		})
+	})
+
 
 	// GET a reserva detail
 	router.GET("/reserva/:id", func(c *gin.Context) {
