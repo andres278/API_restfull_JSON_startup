@@ -81,6 +81,99 @@ func main() {
 
 
 //Acá ingresar el contenido de los metodos que daran el servicio API
+	
+
+	// GET a reserva detail
+	router.GET("/reserva/:id", func(c *gin.Context) {
+		var (
+			reserva  Reserva
+			reservas []Reserva
+		)
+		id := c.Param("id")
+		rows, err := db.Query("SELECT *FROM reservas r INNER JOIN cliente c ON (r.cliente_idCliente = c.idCliente) WHERE r.idReservas = ?;", id)
+	
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		for rows.Next() {
+			err = rows.Scan(&reserva.ID, &reserva.FechaCreacion, &reserva.FechaReserva, &reserva.Hora, &reserva.NumeroPersonas, &reserva.Cli.IDCliente, &reserva.Rest.ID, &reserva.Cli.IDCliente, &reserva.Cli.Nombre,&reserva.Cli.Apellido,&reserva.Cli.Pass)
+
+			reservas = append(reservas, reserva)
+
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+		}
+		defer rows.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"result": reservas,
+			"count":  len(reservas),
+		})
+	})
+
+
+// POST new restaurantes details
+	router.POST("/reserva", func(c *gin.Context) {
+		var buffer bytes.Buffer
+		
+		fechaCreacion := c.PostForm("fechaCreacion")
+		fechaReserva := c.PostForm("fechaReserva")
+		hora := c.PostForm("hora")
+		numeroPersonas := c.PostForm("numeroPersonas")
+		clienteIDCliente := c.PostForm("cliente_idCliente")
+		restauranteid := c.PostForm("restaurante_id")
+		
+		stmt, err := db.Prepare("insert into reservas ( fechaCreacion, fechaReserva, hora, numeroPersonas, cliente_idCliente, restaurante_id) values(?,?,?,?,?,?);")
+	
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		_, err = stmt.Exec(fechaCreacion, fechaReserva, hora, numeroPersonas, clienteIDCliente, restauranteid)
+
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
+		// Fastest way to append strings
+		buffer.WriteString(fechaReserva)
+		buffer.WriteString(" ")
+		buffer.WriteString(hora)
+		buffer.WriteString(" ")
+		buffer.WriteString(numeroPersonas)
+		defer stmt.Close()
+		dato := buffer.String()
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf(" %s successfully created", dato),
+		})
+	})
+
+
+  // GET a reservas 
+ 	router.GET("/reservas", func(c *gin.Context) {
+  		var (
+   			reserva  Reserva
+   			reservas []Reserva
+  		)
+  		rows, err := db.Query("SELECT *FROM reservas r INNER JOIN cliente c ON (r.cliente_idCliente = c.idCliente)")
+ 
+  		if err != nil {
+   			fmt.Print(err.Error())
+  		}
+  		for rows.Next() {
+   			err = rows.Scan(&reserva.ID, &reserva.FechaCreacion, &reserva.FechaReserva, &reserva.Hora, &reserva.NumeroPersonas, &reserva.Cli.IDCliente, &reserva.Rest.ID, &reserva.Cli.IDCliente, &reserva.Cli.Nombre,&reserva.Cli.Apellido,&reserva.Cli.Pass)
+
+   		reservas = append(reservas, reserva)
+
+   			if err != nil {
+    			fmt.Print(err.Error())
+   			}
+  		}
+  		defer rows.Close()
+  		c.JSON(http.StatusOK, gin.H{
+   			"result": reservas,
+   			"count":  len(reservas),
+  		})
+ 	})
 
 
 
